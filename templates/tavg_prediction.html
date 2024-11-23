@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card slide-in">
+    <h2>Dự Đoán Nhiệt Độ Trung Bình</h2>
+    <div class="button-group">
+        <button id="useSampleBtn" class="btn secondary-btn pulse">Dùng Dữ Liệu Mẫu</button>
+    </div>
+    <form id="tavgForm" class="prediction-form">
+        <div class="input-group">
+            <label for="tmin">Nhiệt độ thấp nhất (°C)</label>
+            <input type="number" id="tmin" name="tmin" required step="0.1">
+        </div>
+        <div class="input-group">
+            <label for="tmax">Nhiệt độ cao nhất (°C)</label>
+            <input type="number" id="tmax" name="tmax" required step="0.1">
+        </div>
+        <div class="input-group">
+            <label for="prcp">Lượng mưa (mm)</label>
+            <input type="number" id="prcp" name="prcp" required step="0.1">
+        </div>
+        <div class="input-group">
+            <label for="wdir">Hướng gió (độ)</label>
+            <input type="number" id="wdir" name="wdir" required min="0" max="360">
+        </div>
+        <div class="input-group">
+            <label for="wspd">Tốc độ gió (m/s)</label>
+            <input type="number" id="wspd" name="wspd" required step="0.1">
+        </div>
+        <div class="input-group">
+            <label for="month">Tháng</label>
+            <input type="number" id="month" name="month" required min="1" max="12">
+        </div>
+        <div class="input-group">
+            <label for="day">Ngày</label>
+            <input type="number" id="day" name="day" required min="1" max="31">
+        </div>
+        <button type="submit" class="btn pulse">Dự Đoán</button>
+    </form>
+
+    <div id="results" class="results fade-in" style="display: none;">
+        <h3>Kết quả dự đoán</h3>
+        <div class="model-metrics">
+            <h4>Độ tin cậy của các mô hình (R²)</h4>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <p>Linear Regression: 0.812</p>
+                    <div class="confidence-bar" style="width: 81.2%"></div>
+                </div>
+                <div class="metric-card">
+                    <p>Random Forest: 0.856</p>
+                    <div class="confidence-bar" style="width: 85.6%"></div>
+                </div>
+                <div class="metric-card">
+                    <p>XGBoost: 0.878</p>
+                    <div class="confidence-bar" style="width: 87.8%"></div>
+                </div>
+                <div class="metric-card">
+                    <p>SVR: 0.834</p>
+                    <div class="confidence-bar" style="width: 83.4%"></div>
+                </div>
+                <div class="metric-card">
+                    <p>Neural Network: 0.845</p>
+                    <div class="confidence-bar" style="width: 84.5%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="predictions-grid">
+            <div class="prediction-card">
+                <h4>Linear Regression</h4>
+                <p class="temperature"></p>
+            </div>
+            <div class="prediction-card">
+                <h4>Random Forest</h4>
+                <p class="temperature"></p>
+            </div>
+            <div class="prediction-card">
+                <h4>XGBoost</h4>
+                <p class="temperature"></p>
+            </div>
+            <div class="prediction-card">
+                <h4>SVR</h4>
+                <p class="temperature"></p>
+            </div>
+            <div class="prediction-card">
+                <h4>Neural Network</h4>
+                <p class="temperature"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('useSampleBtn').addEventListener('click', async () => {
+    try {
+        const response = await fetch('/api/get_tavg_sample');
+        const sampleData = await response.json();
+        
+        // Điền dữ liệu mẫu vào form
+        Object.keys(sampleData).forEach(key => {
+            document.getElementById(key).value = sampleData[key];
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Không thể tải dữ liệu mẫu');
+    }
+});
+
+document.getElementById('tavgForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = {
+        tmin: parseFloat(document.getElementById('tmin').value),
+        tmax: parseFloat(document.getElementById('tmax').value),
+        prcp: parseFloat(document.getElementById('prcp').value),
+        wdir: parseFloat(document.getElementById('wdir').value),
+        wspd: parseFloat(document.getElementById('wspd').value),
+        month: parseInt(document.getElementById('month').value),
+        day: parseInt(document.getElementById('day').value)
+    };
+
+    try {
+        const response = await fetch('/api/predict_tavg', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const predictions = await response.json();
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.style.display = 'block';
+
+        const cards = resultsDiv.getElementsByClassName('prediction-card');
+        Object.entries(predictions).forEach(([model, value], index) => {
+            cards[index].querySelector('.temperature').textContent = 
+                `${value.toFixed(1)}°C`;
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra khi dự đoán');
+    }
+});
+</script>
+{% endblock %} 

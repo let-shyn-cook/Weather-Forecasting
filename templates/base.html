@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dự Báo Thời Tiết</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">Dự Báo Thời Tiết AI</div>
+        <div class="nav-links">
+            <a href="{{ url_for('tavg_prediction') }}" class="nav-link">Dự Đoán Nhiệt Độ</a>
+            <a href="{{ url_for('sequence_prediction') }}" class="nav-link">Dự Đoán Chuỗi</a>
+            <a href="{{ url_for('guide') }}" class="nav-link">Hướng Dẫn</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+    <div class="theme-switcher">
+        <button class="theme-btn light-theme" data-theme="light" title="Light">
+            <span class="theme-icon">☀️</span>
+        </button>
+        <button class="theme-btn ocean-theme" data-theme="ocean" title="Ocean">
+            <span class="theme-icon">🌊</span>
+        </button>
+        <button class="theme-btn galaxy-theme" data-theme="galaxy" title="Galaxy">
+            <span class="theme-icon">🌌</span>
+        </button>
+        <button class="theme-btn sunset-theme" data-theme="sunset" title="Sunset">
+            <span class="theme-icon">🌅</span>
+        </button>
+    </div>
+
+    <footer class="footer">
+        <p>2024 Dự Báo Thời Tiết AI. Được phát triển bởi shyn.</p>
+    </footer>
+
+    <script>
+    // Theme switcher
+    document.addEventListener('DOMContentLoaded', function() {
+        const themeBtns = document.querySelectorAll('.theme-btn');
+        const root = document.documentElement;
+        
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        root.className = `theme-${savedTheme}`;
+        
+        themeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const theme = btn.dataset.theme;
+                root.className = `theme-${theme}`;
+                localStorage.setItem('theme', theme);
+                
+                // Add animation
+                document.body.style.animation = 'themeTransition 0.5s';
+                setTimeout(() => {
+                    document.body.style.animation = '';
+                }, 500);
+            });
+        });
+    });
+    </script>
+</body>
+</html> 

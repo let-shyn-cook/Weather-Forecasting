@@ -1,0 +1,127 @@
+/* Light Theme */
+.theme-light {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f7fa;
+    --text-primary: #2c3e50;
+    --text-secondary: #34495e;
+    --accent-color: #3498db;
+    --border-color: #e0e6ed;
+    --card-bg: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    --btn-gradient: linear-gradient(45deg, #2196F3, #1976D2);
+}
+
+/* Modern Theme */
+.theme-modern {
+    --primary-color: #7952b3;
+    --primary-color-rgb: 121,82,179;
+    --secondary-color: #6741d9;
+    --accent-color: #845ef7;
+    --accent-color-rgb: 132,94,247;
+    --bg-primary: #f8f9fa;
+    --bg-secondary: #e9ecef;
+    --text-primary: #212529;
+    --card-bg: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.4));
+}
+
+/* Sunset Theme */
+.theme-sunset {
+    --primary-color: #e64980;
+    --primary-color-rgb: 230,73,128;
+    --secondary-color: #d6336c;
+    --accent-color: #f06595;
+    --accent-color-rgb: 240,101,149;
+    --bg-primary: #fff0f6;
+    --bg-secondary: #ffdeeb;
+    --text-primary: #a61e4d;
+    --card-bg: linear-gradient(135deg, rgba(255,222,235,0.8), rgba(255,240,246,0.4));
+}
+
+/* Forest Theme */
+.theme-forest {
+    --primary-color: #2b8a3e;
+    --primary-color-rgb: 43,138,62;
+    --secondary-color: #2f9e44;
+    --accent-color: #40c057;
+    --accent-color-rgb: 64,192,87;
+    --bg-primary: #ebfbee;
+    --bg-secondary: #d3f9d8;
+    --text-primary: #2b8a3e;
+    --card-bg: linear-gradient(135deg, rgba(235,251,238,0.8), rgba(211,249,216,0.4));
+}
+
+/* Ocean Theme */
+.theme-ocean {
+    --primary-color: #0891b2;
+    --primary-color-rgb: 8,145,178;
+    --secondary-color: #0e7490;
+    --accent-color: #06b6d4;
+    --accent-color-rgb: 6,182,212;
+    --bg-primary: #ecfeff;
+    --bg-secondary: #cffafe;
+    --text-primary: #164e63;
+    --card-bg: linear-gradient(135deg, rgba(236,254,255,0.8), rgba(207,250,254,0.4));
+}
+
+/* Galaxy Theme */
+.theme-galaxy {
+    --primary-color: #7e22ce;
+    --primary-color-rgb: 126,34,206;
+    --secondary-color: #6b21a8;
+    --accent-color: #9333ea;
+    --accent-color-rgb: 147,51,234;
+    --bg-primary: #faf5ff;
+    --bg-secondary: #f3e8ff;
+    --text-primary: #581c87;
+    --card-bg: linear-gradient(135deg, rgba(250,245,255,0.8), rgba(243,232,255,0.4));
+}
+
+.theme-switcher {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    padding: 10px;
+    border-radius: 30px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.theme-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+}
+
+.theme-btn:hover {
+    transform: scale(1.2);
+}
+
+.theme-icon {
+    font-size: 20px;
+}
+
+.light-theme { background: #f5f7fa; }
+.dark-theme { background: #2d2d2d; }
+.nature-theme { background: #e8f5e9; }
+.ocean-theme { background: #e3f2fd; }
+
+@keyframes themeTransition {
+    0% { 
+        opacity: 0.8;
+        transform: scale(0.98);
+    }
+    100% { 
+        opacity: 1;
+        transform: scale(1);
+    }
+} 

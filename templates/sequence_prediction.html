@@ -1,0 +1,566 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card slide-in">
+    <h2>Dự Đoán Thời Tiết</h2>
+    
+    <div class="button-group">
+        <button id="useSampleBtn" class="btn secondary-btn pulse">Dùng Dữ Liệu Mẫu</button>
+    </div>
+
+    <div class="input-group">
+        <label for="input_days">Số ngày dữ liệu đầu vào</label>
+        <input type="number" id="input_days" min="7" max="30" value="7" class="form-control">
+        <button onclick="generateInputFields()" class="btn">Tạo trường nhập liệu</button>
+    </div>
+
+    <div class="input-group">
+        <label for="days_to_predict">Số ngày muốn dự đoán</label>
+        <input type="number" id="days_to_predict" min="1" max="7" value="3" class="form-control">
+    </div>
+
+    <div class="sequence-inputs">
+        <h3>Nhập dữ liệu các ngày gần nhất</h3>
+        <div id="dayInputs" class="day-inputs-container"></div>
+    </div>
+
+    <button id="predictBtn" class="btn pulse">Dự Đoán</button>
+
+    <div id="sequenceResults" class="results fade-in" style="display: none;">
+        <h3>Kết quả dự đoán</h3>
+        <div class="charts-container">
+            <div class="chart-card">
+                <h4>Biểu đồ nhiệt độ</h4>
+                <div class="chart-wrapper">
+                    <canvas id="temperatureChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h4>Biểu đồ lượng mưa</h4>
+                <div class="chart-wrapper">
+                    <canvas id="rainfallChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card" data-chart="wind">
+                <h4>Biểu đồ gió</h4>
+                <div class="chart-wrapper">
+                    <canvas id="windChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h4>Biểu đồ áp suất</h4>
+                <div class="chart-wrapper">
+                    <canvas id="pressureChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="model-metrics">
+            <h4>Độ tin cậy của các mô hình (R²)</h4>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <p>LSTM: 0.824</p>
+                    <div class="confidence-bar" style="width: 82.4%"></div>
+                </div>
+                <div class="metric-card">
+                    <p>XGBoost: 0.856</p>
+                    <div class="confidence-bar" style="width: 85.6%"></div>
+                </div>
+            </div>
+        </div>
+        <div id="predictions" class="predictions-table"></div>
+    </div>
+</div>
+
+<script>
+document.getElementById('useSampleBtn').addEventListener('click', async () => {
+    try {
+        const response = await fetch('/api/get_sequence_sample');
+        const sampleData = await response.json();
+        
+        // Đặt số ngày input và dự đoán
+        document.getElementById('input_days').value = sampleData.input_data.length;
+        document.getElementById('days_to_predict').value = sampleData.days_to_predict;
+        
+        // Tạo lại các trường input
+        generateInputFields();
+        
+        // Điền d liệu mẫu
+        sampleData.input_data.forEach((day, index) => {
+            Object.keys(day).forEach(feature => {
+                const input = document.getElementById(`${feature}_${index + 1}`);
+                if (input) {
+                    input.value = day[feature];
+                }
+            });
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Không thể tải dữ liệu mẫu');
+    }
+});
+
+const features = ['tavg', 'tmin', 'tmax', 'prcp', 'wdir', 'wspd', 'pres'];
+const featureLabels = {
+    'tavg': 'Nhiệt độ TB (°C)',
+    'tmin': 'Nhiệt độ min (°C)',
+    'tmax': 'Nhiệt độ max (°C)',
+    'prcp': 'Lượng mưa (mm)',
+    'wdir': 'Hướng gió (độ)',
+    'wspd': 'Tốc độ gió (m/s)',
+    'pres': 'Áp suất (hPa)'
+};
+
+function generateInputFields() {
+    const numDays = parseInt(document.getElementById('input_days').value);
+    const container = document.getElementById('dayInputs');
+    container.innerHTML = '';
+    
+    for (let day = 1; day <= numDays; day++) {
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'day-inputs';
+        dayDiv.innerHTML = `
+            <h4>Ngày ${day}</h4>
+            ${features.map(feature => `
+                <div class="input-group">
+                    <label for="${feature}_${day}">${featureLabels[feature]}</label>
+                    <input type="number" id="${feature}_${day}" step="0.1" required>
+                </div>
+            `).join('')}
+        `;
+        container.appendChild(dayDiv);
+    }
+}
+
+document.getElementById('input_days').addEventListener('change', function() {
+    const value = parseInt(this.value);
+    if (value < 7) {
+        alert('Số ngày dữ liệu đầu vào phải từ 7 ngày trở lên');
+        this.value = 7;
+    }
+    generateInputFields();
+});
+
+document.getElementById('predictBtn').addEventListener('click', async () => {
+    const numDays = parseInt(document.getElementById('input_days').value);
+    if (numDays < 7) {
+        alert('Số ngày dữ liệu đầu vào phải từ 7 ngày trở lên');
+        return;
+    }
+    try {
+        const daysToPredict = parseInt(document.getElementById('days_to_predict').value);
+        
+        // Thu thập dữ liệu từ form
+        const sequence = [];
+        for (let day = 1; day <= numDays; day++) {
+            const dayData = {};
+            features.forEach(feature => {
+                dayData[feature] = parseFloat(document.getElementById(`${feature}_${day}`).value);
+            });
+            sequence.push(dayData);
+        }
+
+        const response = await fetch('/api/predict_sequence', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                sequence: sequence,
+                days_to_predict: daysToPredict
+            })
+        });
+
+        const predictions = await response.json();
+        displayPredictions(predictions);
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra khi dự đoán');
+    }
+});
+
+function displayPredictions(predictions) {
+    const resultsDiv = document.getElementById('sequenceResults');
+    resultsDiv.style.display = 'block';
+    
+    // Hiển thị bảng kết quả dự đoán
+    const predictionsDiv = document.getElementById('predictions');
+    let tableHTML = `
+        <table class="prediction-table">
+            <thead>
+                <tr>
+                    <th>Mô hình</th>
+                    <th>Ngày</th>
+                    ${features.map(f => `<th>${featureLabels[f]}</th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    Object.entries(predictions).forEach(([model, days]) => {
+        days.forEach((day, idx) => {
+            tableHTML += `
+                <tr>
+                    <td>${model}</td>
+                    <td>Ngày ${idx + 1}</td>
+                    ${features.map(feature => {
+                        const value = day[feature];
+                        return `<td>${typeof value === 'number' ? value.toFixed(2) : 'N/A'}</td>`;
+                    }).join('')}
+                </tr>
+            `;
+        });
+    });
+
+    tableHTML += '</tbody></table>';
+    predictionsDiv.innerHTML = tableHTML;
+
+    // Chuẩn bị dữ liệu cho biểu đồ
+    const dates = [];
+    const inputData = {
+        tavg: [], tmin: [], tmax: [], prcp: [],
+        wdir: [], wspd: [], pres: []
+    };
+    const predictedData = {
+        tavg: [], tmin: [], tmax: [], prcp: [],
+        wdir: [], wspd: [], pres: []
+    };
+
+    // Thu thập dữ liệu đầu vào
+    const numDays = parseInt(document.getElementById('input_days').value);
+    for (let i = 1; i <= numDays; i++) {
+        dates.push(`Ngày ${i}`);
+        features.forEach(feature => {
+            const value = parseFloat(document.getElementById(`${feature}_${i}`).value);
+            inputData[feature].push(value);
+        });
+    }
+
+    // Thu thập dữ liệu dự đoán từ model đầu tiên
+    const firstModel = Object.keys(predictions)[0];
+    predictions[firstModel].forEach((day, idx) => {
+        dates.push(`Dự đoán ${idx + 1}`);
+        features.forEach(feature => {
+            predictedData[feature].push(day[feature]);
+        });
+    });
+
+    // Thêm vào phần options của mỗi biểu đồ
+    const commonChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false
+        },
+        plugins: {
+            legend: {
+                position: 'top',
+                align: 'center',
+                labels: {
+                    boxWidth: 12,
+                    padding: 8,
+                    font: {
+                        size: window.innerWidth < 768 ? 10 : 12
+                    }
+                }
+            },
+            tooltip: {
+                enabled: true,
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                    label: function(context) {
+                        return context.dataset.label + ': ' + 
+                               context.parsed.y.toFixed(2);
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                ticks: {
+                    maxRotation: 45,
+                    minRotation: 45,
+                    font: {
+                        size: window.innerWidth < 768 ? 8 : 10
+                    }
+                }
+            },
+            y: {
+                ticks: {
+                    font: {
+                        size: window.innerWidth < 768 ? 8 : 10
+                    }
+                }
+            }
+        },
+        animation: {
+            duration: window.innerWidth < 768 ? 0 : 1000
+        }
+    };
+
+    // Thêm đoạn này vào trước khi tạo biểu đồ
+    const chartContainer = document.querySelector('.charts-container');
+    chartContainer.innerHTML = `
+        <div class="chart-card">
+            <h4>Biểu đồ nhiệt độ</h4>
+            <div class="chart-wrapper">
+                <canvas id="temperatureChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h4>Biểu đồ lượng mưa</h4>
+            <div class="chart-wrapper">
+                <canvas id="rainfallChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card" data-chart="wind">
+            <h4>Biểu đồ gió</h4>
+            <div class="chart-wrapper">
+                <canvas id="windChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h4>Biểu đồ áp suất</h4>
+            <div class="chart-wrapper">
+                <canvas id="pressureChart"></canvas>
+            </div>
+        </div>
+    `;
+
+    // Khởi tạo biến để lưu các biểu đồ
+    let temperatureChart, rainfallChart, windChart, pressureChart;
+
+    // Thêm event listener cho resize
+    window.addEventListener('resize', function() {
+        const charts = [
+            temperatureChart, 
+            rainfallChart, 
+            windChart, 
+            pressureChart
+        ];
+        
+        charts.forEach(chart => {
+            if (chart && chart.options) {
+                try {
+                    chart.options.plugins.legend.labels.font.size = 
+                        window.innerWidth < 768 ? 10 : 12;
+                    chart.options.scales.x.ticks.font.size = 
+                        window.innerWidth < 768 ? 8 : 10;
+                    chart.options.scales.y.ticks.font.size = 
+                        window.innerWidth < 768 ? 8 : 10;
+                    chart.update('none'); // Thêm 'none' để tránh animation khi resize
+                } catch (error) {
+                    console.warn('Error updating chart:', error);
+                }
+            }
+        });
+    });
+
+    // Cập nhật các biến biểu đồ khi tạo mới
+    function updateChartVariables() {
+        temperatureChart = document.getElementById('temperatureChart')?.chart;
+        rainfallChart = document.getElementById('rainfallChart')?.chart;
+        windChart = document.getElementById('windChart')?.chart;
+        pressureChart = document.getElementById('pressureChart')?.chart;
+    }
+
+    // Vẽ biểu đồ nhiệt độ
+    temperatureChart = new Chart(document.getElementById('temperatureChart'), {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: Object.entries(predictions).map(([model, days]) => ({
+                label: model,
+                data: [...inputData.tavg, ...days.map(day => day.tavg)],
+                borderColor: getModelColor(model),
+                backgroundColor: getModelColor(model),
+                fill: false,
+                tension: 0.4
+            }))
+        },
+        options: {
+            ...commonChartOptions,
+            scales: {
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Nhiệt độ (°C)'
+                    }
+                }
+            }
+        }
+    });
+
+    // Vẽ biểu đồ lượng mưa
+    rainfallChart = new Chart(document.getElementById('rainfallChart'), {
+        type: 'bar',
+        data: {
+            labels: dates,
+            datasets: Object.entries(predictions).map(([model, days]) => ({
+                label: model,
+                data: [...inputData.prcp, ...days.map(day => day.prcp)],
+                backgroundColor: getModelColor(model),
+                borderColor: getModelColor(model),
+                borderWidth: 1
+            }))
+        },
+        options: {
+            ...commonChartOptions,
+            scales: {
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Lượng mưa (mm)'
+                    }
+                }
+            }
+        }
+    });
+
+    // Vẽ biểu đồ gió
+    windChart = new Chart(document.getElementById('windChart'), {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [
+                // Hướng gió cho từng mô hình
+                ...Object.entries(predictions).map(([model, days]) => ({
+                    label: `${model} - Hướng gió`,
+                    data: [...inputData.wdir, ...days.map(day => day.wdir)],
+                    yAxisID: 'wdir',
+                    borderColor: getModelColor(model),
+                    backgroundColor: `${getModelColor(model)}33`,
+                    fill: false,
+                    tension: 0.4,
+                    borderDash: [5, 5]
+                })),
+                // Tốc độ gió cho từng mô hình
+                ...Object.entries(predictions).map(([model, days]) => ({
+                    label: `${model} - Tốc độ gió`,
+                    data: [...inputData.wspd, ...days.map(day => day.wspd)],
+                    yAxisID: 'wspd',
+                    borderColor: getModelColor(model),
+                    backgroundColor: `${getModelColor(model)}33`,
+                    fill: false,
+                    tension: 0.4
+                }))
+            ]
+        },
+        options: {
+            ...commonChartOptions,
+            scales: {
+                wdir: {
+                    type: 'linear',
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Hướng gió (độ)'
+                    },
+                    min: 0,
+                    max: 360,
+                    ticks: {
+                        stepSize: 45,
+                        callback: function(value) {
+                            const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+                            return directions[Math.floor(((value % 360) + 22.5) / 45) % 8];
+                        },
+                        font: {
+                            size: window.innerWidth < 768 ? 8 : 10
+                        }
+                    }
+                },
+                wspd: {
+                    type: 'linear',
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Tốc độ gió (m/s)'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    ticks: {
+                        font: {
+                            size: window.innerWidth < 768 ? 8 : 10
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    align: 'center',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 8,
+                        font: {
+                            size: window.innerWidth < 768 ? 8 : 10
+                        },
+                        filter: function(legendItem, data) {
+                            return !legendItem.text.includes('undefined');
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.dataset.label;
+                            const value = context.parsed.y;
+                            if (label.includes('Hướng gió')) {
+                                const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+                                const dirIndex = Math.floor(((value % 360) + 22.5) / 45) % 8;
+                                return `${label}: ${value.toFixed(1)}° (${directions[dirIndex]})`;
+                            }
+                            return `${label}: ${value.toFixed(1)} m/s`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Vẽ biểu đồ áp suất
+    pressureChart = new Chart(document.getElementById('pressureChart'), {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: Object.entries(predictions).map(([model, days]) => ({
+                label: model,
+                data: [...inputData.pres, ...days.map(day => day.pres)],
+                borderColor: getModelColor(model),
+                fill: false,
+                tension: 0.4
+            }))
+        },
+        options: {
+            ...commonChartOptions,
+            scales: {
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Áp suất (hPa)'
+                    }
+                }
+            }
+        }
+    });
+
+    // Hàm helper để lấy màu cho từng model
+    function getModelColor(model) {
+        const colors = {
+            'LSTM': '#ff6384',
+            'XGBoost': '#36a2eb'
+        };
+        return colors[model] || '#000000';
+    }
+
+    // Cập nhật biến chart
+    updateChartVariables();
+}
+
+// Tạo trưng nhập liệu mặc định khi trang được tải
+window.onload = generateInputFields;
+</script>
+{% endblock %} 

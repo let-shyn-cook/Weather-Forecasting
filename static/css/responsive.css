@@ -1,0 +1,348 @@
+ /* Mobile First Approach */
+ /* Base styles (for mobile devices) */
+ .container {
+     width: 100%;
+     padding: 0.5rem;
+ }
+
+ .card {
+     padding: 1rem;
+     margin: 0.5rem 0;
+ }
+
+ /* Navbar Responsive */
+ .navbar {
+     flex-direction: column;
+     padding: 0.5rem;
+ }
+
+ .nav-links {
+     flex-direction: column;
+     width: 100%;
+     text-align: center;
+     padding: 0.5rem 0;
+ }
+
+ .nav-link {
+     padding: 0.5rem;
+     width: 100%;
+     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+ }
+
+ /* Form Elements */
+ .input-group {
+     width: 100%;
+ }
+
+ .input-group input {
+     width: 100%;
+     max-width: 100%;
+ }
+
+ /* Charts Responsive */
+ .charts-container {
+     display: grid;
+     grid-template-columns: 1fr;
+     gap: 1rem;
+     margin: 1rem 0;
+ }
+
+ .chart-card {
+     padding: 1rem;
+ }
+
+ .chart-card canvas {
+     height: 250px !important;
+ }
+
+ /* Metrics Grid */
+ .metrics-grid {
+     grid-template-columns: 1fr;
+ }
+
+ /* Prediction Table */
+ .prediction-table {
+     display: block;
+     overflow-x: auto;
+     white-space: nowrap;
+ }
+
+ /* Theme Switcher */
+ .theme-switcher {
+     bottom: 10px;
+     right: 10px;
+     padding: 5px;
+ }
+
+ .theme-btn {
+     width: 30px;
+     height: 30px;
+ }
+
+ /* Tablet Breakpoint */
+ @media (min-width: 768px) {
+     .container {
+         padding: 1rem;
+     }
+
+     .navbar {
+         flex-direction: row;
+         padding: 1rem 2rem;
+     }
+
+     .nav-links {
+         flex-direction: row;
+         width: auto;
+     }
+
+     .nav-link {
+         width: auto;
+         border-bottom: none;
+     }
+
+     .charts-container {
+         grid-template-columns: repeat(2, 1fr);
+         gap: 2rem;
+     }
+
+     .metrics-grid {
+         grid-template-columns: repeat(2, 1fr);
+     }
+
+     .chart-card canvas {
+         height: 300px !important;
+     }
+ }
+
+ /* Desktop Breakpoint */
+ @media (min-width: 1024px) {
+     .container {
+         max-width: 1200px;
+         margin: 2rem auto;
+         padding: 0 2rem;
+     }
+
+     .metrics-grid {
+         grid-template-columns: repeat(3, 1fr);
+     }
+
+     .chart-card canvas {
+         height: 400px !important;
+     }
+ }
+
+ /* Large Desktop Breakpoint */
+ @media (min-width: 1440px) {
+     .charts-container {
+         grid-template-columns: repeat(2, 1fr);
+         gap: 2rem;
+     }
+
+     .metrics-grid {
+         grid-template-columns: repeat(5, 1fr);
+     }
+ }
+
+ /* Touch Device Optimizations */
+ @media (hover: none) {
+     .btn:hover {
+         transform: none;
+     }
+
+     .card:hover {
+         transform: none;
+     }
+
+     .prediction-card:hover {
+         transform: none;
+     }
+ }
+
+ /* Print Media Query */
+ @media print {
+
+     .theme-switcher,
+     .navbar {
+         display: none;
+     }
+
+     .card {
+         box-shadow: none;
+         border: 1px solid #ddd;
+     }
+
+     .charts-container {
+         page-break-inside: avoid;
+     }
+ }
+
+ /* Orientation Changes */
+ @media (orientation: landscape) and (max-width: 768px) {
+     .charts-container {
+         grid-template-columns: repeat(2, 1fr);
+     }
+ }
+
+ /* High DPI Screens */
+ @media (-webkit-min-device-pixel-ratio: 2),
+ (min-resolution: 192dpi) {
+     .card {
+         border-width: 0.5px;
+     }
+ }
+
+ /* Dark Mode Support */
+ @media (prefers-color-scheme: dark) {
+     .prediction-table th {
+         background: var(--primary-color);
+     }
+ }
+
+ /* Reduced Motion */
+ @media (prefers-reduced-motion: reduce) {
+     * {
+         animation: none !important;
+         transition: none !important;
+     }
+ }
+
+ /* Chart Responsive Styles */
+ .charts-container {
+     display: grid;
+     grid-template-columns: 1fr;
+     gap: 1rem;
+     margin: 1rem 0;
+ }
+
+ @media (min-width: 768px) {
+     .charts-container {
+         grid-template-columns: repeat(2, 1fr);
+         gap: 2rem;
+     }
+ }
+
+ .chart-wrapper {
+     position: relative;
+     width: 100%;
+     padding-bottom: 75%; /* Tỷ lệ khung hình 4:3 */
+     height: 0;
+ }
+
+ .chart-wrapper canvas {
+     position: absolute;
+     top: 0;
+     left: 0;
+     width: 100% !important;
+     height: 100% !important;
+     max-height: 300px;
+ }
+
+ @media (max-width: 767px) {
+     .chart-card {
+         margin-bottom: 1.5rem;
+     }
+
+     .chart-wrapper {
+         padding-bottom: 100%; /* Tỷ lệ vuông cho mobile */
+     }
+
+     .chart-wrapper canvas {
+         max-height: 250px;
+     }
+
+     .chart-card h4 {
+         font-size: 0.9rem;
+         margin-bottom: 0.5rem;
+     }
+ }
+
+ /* Touch optimization for charts */
+ @media (hover: none) and (pointer: coarse) {
+     .chart-wrapper {
+         touch-action: pan-x pan-y;
+     }
+     
+     .chart-card {
+         overflow-x: auto;
+         -webkit-overflow-scrolling: touch;
+     }
+ }
+
+ /* Chart Legend Responsive */
+ .chart-legend {
+     display: flex;
+     flex-wrap: wrap;
+     justify-content: center;
+     gap: 0.5rem;
+     margin-top: 0.5rem;
+     font-size: 0.8rem;
+ }
+
+ @media (max-width: 480px) {
+     .chart-legend {
+         font-size: 0.7rem;
+     }
+ }
+
+ /* Wind Chart Responsive Styles */
+ @media (max-width: 767px) {
+     .chart-card[data-chart="wind"] {
+         height: auto;
+         min-height: 300px;
+     }
+
+     .chart-card[data-chart="wind"] .chart-wrapper {
+         padding-bottom: 120%;
+     }
+
+     .chart-card[data-chart="wind"] canvas {
+         max-height: none;
+     }
+ }
+
+ /* Landscape mode optimization for wind chart */
+ @media (max-width: 767px) and (orientation: landscape) {
+     .chart-card[data-chart="wind"] .chart-wrapper {
+         padding-bottom: 80%;
+     }
+ }
+
+ /* Custom tooltip position for wind chart on mobile */
+ @media (hover: none) and (pointer: coarse) {
+     .chart-card[data-chart="wind"] {
+         overflow: visible;
+     }
+ }
+
+ @media (max-width: 768px) {
+     .guide-container {
+         padding: 1rem;
+     }
+
+     .guide-title {
+         font-size: 2rem;
+     }
+
+     .guide-section {
+         padding: 1rem;
+     }
+
+     .guide-content ol,
+     .guide-content ul {
+         padding-left: 1.2rem;
+     }
+ }
+
+ @media (max-width: 480px) {
+     .guide-title {
+         font-size: 1.8rem;
+     }
+
+     .guide-section h2 {
+         font-size: 1.4rem;
+     }
+
+     .guide-content h3 {
+         font-size: 1.2rem;
+     }
+ }

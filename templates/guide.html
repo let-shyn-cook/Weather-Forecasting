@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="guide-container">
+    <h1 class="guide-title">Hướng Dẫn Sử Dụng</h1>
+    
+    <section class="guide-section">
+        <h2>1. Dự Đoán Nhiệt Độ Trung Bình</h2>
+        <div class="guide-content">
+            <h3>Cách sử dụng:</h3>
+            <ol>
+                <li>Truy cập vào trang "Dự Đoán Nhiệt Độ"</li>
+                <li>Có thể nhấn nút "Dùng Dữ Liệu Mẫu" để thử nghiệm</li>
+                <li>Nhập các thông số theo yêu cầu:
+                    <ul>
+                        <li>Nhiệt độ thấp nhất (°C): từ -10 đến 40</li>
+                        <li>Nhiệt độ cao nhất (°C): từ -5 đến 45</li>
+                        <li>Lượng mưa (mm): từ 0 trở lên</li>
+                        <li>Hướng gió (độ): từ 0 đến 360</li>
+                        <li>Tốc độ gió (m/s): từ 0 trở lên</li>
+                        <li>Tháng: từ 1 đến 12</li>
+                        <li>Ngày: từ 1 đến 31</li>
+                    </ul>
+                </li>
+                <li>Nhấn nút "Dự Đoán" để xem kết quả</li>
+            </ol>
+
+            <h3>Cách đọc kết quả:</h3>
+            <ul>
+                <li>Phần "Độ tin cậy của các mô hình (R²)":
+                    <ul>
+                        <li>Thanh màu thể hiện độ chính xác của từng mô hình</li>
+                        <li>Giá trị càng gần 1 càng chính xác</li>
+                    </ul>
+                </li>
+                <li>Kết quả dự đoán:
+                    <ul>
+                        <li>Mỗi mô hình sẽ đưa ra một giá trị nhiệt độ trung bình</li>
+                        <li>Nên tham khảo kết quả từ nhiều mô hình để có dự đoán chính xác nhất</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="guide-section">
+        <h2>2. Dự Đoán Chuỗi Thời Tiết</h2>
+        <div class="guide-content">
+            <h3>Cách sử dụng:</h3>
+            <ol>
+                <li>Truy cập vào trang "Dự Đoán Chuỗi"</li>
+                <li>Chọn số ngày dữ liệu đầu vào (7-30 ngày)</li>
+                <li>Chọn số ngày muốn dự đoán (1-7 ngày)</li>
+                <li>Có thể nhấn "Dùng Dữ Liệu Mẫu" để thử nghiệm</li>
+                <li>Nhập dữ liệu cho từng ngày:
+                    <ul>
+                        <li>Nhiệt độ TB (°C): nhiệt độ trung bình</li>
+                        <li>Nhiệt độ min (°C): nhiệt độ thấp nhất</li>
+                        <li>Nhiệt độ max (°C): nhiệt độ cao nhất</li>
+                        <li>Lượng mưa (mm): lượng mưa trong ngày</li>
+                        <li>Hướng gió (độ): 0-360 độ (0: Bắc, 90: Đông, 180: Nam, 270: Tây)</li>
+                        <li>Tốc độ gió (m/s): vận tốc gió</li>
+                        <li>Áp suất (hPa): áp suất không khí</li>
+                    </ul>
+                </li>
+            </ol>
+
+            <h3>Cách đọc biểu đồ dự báo:</h3>
+            <ul>
+                <li>Biểu đồ nhiệt độ:
+                    <ul>
+                        <li>Trục Y: nhiệt độ trung bình (°C)</li>
+                        <li>Đường màu khác nhau thể hiện dự đoán của các mô hình khác nhau</li>
+                        <li>Phần đầu là dữ liệu thực tế, phần sau là dự đoán</li>
+                    </ul>
+                </li>
+                <li>Biểu đồ lượng mưa:
+                    <ul>
+                        <li>Dạng cột thể hiện lượng mưa (mm)</li>
+                        <li>Màu sắc khác nhau cho các mô hình khác nhau</li>
+                    </ul>
+                </li>
+                <li>Biểu đồ gió:
+                    <ul>
+                        <li>Hai trục Y: hướng gió (độ) và tốc độ gió (m/s)</li>
+                        <li>Đường đứt khúc: hướng gió</li>
+                        <li>Đường liền: tốc độ gió</li>
+                    </ul>
+                </li>
+                <li>Biểu đồ áp suất:
+                    <ul>
+                        <li>Thể hiện áp suất không khí (hPa)</li>
+                        <li>Xu hướng tăng/giảm áp suất qua các ngày</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </section>
+</div>
+{% endblock %} 
